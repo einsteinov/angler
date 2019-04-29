@@ -2892,7 +2892,7 @@ bcm_cfg80211_add_ibss_if(struct wiphy *wiphy, char *name)
 	/* generate a new MAC address for the IBSS interface */
 	get_primary_mac(cfg, &cfg->ibss_if_addr);
 	cfg->ibss_if_addr.octet[4] ^= 0x40;
-	memset(&aibss_if, sizeof(aibss_if), 0);
+	memset(&aibss_if, 0, sizeof(aibss_if));
 	memcpy(&aibss_if.addr, &cfg->ibss_if_addr, sizeof(aibss_if.addr));
 	aibss_if.chspec = 0;
 	aibss_if.len = sizeof(aibss_if);
@@ -10314,13 +10314,21 @@ wl_cfg80211_netdev_notifier_call(struct notifier_block * nb,
 	void *ndev)
 {
 	struct net_device *dev = ndev;
-	struct wireless_dev *wdev = dev->ieee80211_ptr;
-	struct bcm_cfg80211 *cfg = wl_get_cfg(dev);
+	struct wireless_dev *wdev;
+	struct bcm_cfg80211 *cfg;
 
 	WL_DBG(("Enter \n"));
 
-	if (!wdev || !cfg || dev == bcmcfg_to_prmry_ndev(cfg))
+	if (!dev || !dev->ieee80211_ptr)
 		return NOTIFY_DONE;
+
+	cfg = wl_get_cfg(dev);
+	if (!cfg || dev == bcmcfg_to_prmry_ndev(cfg))
+		return NOTIFY_DONE;
+
+	wdev = dev->ieee80211_ptr;
+
+	pr_info("%s: handling state %lu\n", __func__, state);
 
 	switch (state) {
 		case NETDEV_DOWN:
